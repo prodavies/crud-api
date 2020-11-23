@@ -23,6 +23,8 @@ Route::middleware('auth:api')->namespace('schema_controllers')->prefix('manage')
     Route::resource('supplier','SuppliersController');
     Route::resource('order','OrdersController');
     Route::post('product/{id}/p-edit','ProductsController@updateproduct')->name('editproduct');
+    Route::post('supplier/{id}/edit-supplier','SuppliersController@updatesupplier')->name('editsupplier');
+    Route::post('order/{id}/edit-order','OrdersController@updateorder')->name('editorder');
 });
 
 

@@ -50,12 +50,9 @@ class OrdersController extends Controller
             $order = new Order();
             $order->order_number = $request->order_number;
 
-            $order->save();
-
-            $is_saved = $order->products()->attach($request->product_id);
-
             //check if there is success or failure in saving data
-            if($is_saved){
+            if($order->save()){
+                $order->products()->attach($request['product_id']);
                 return response()->json([
                     'success'=>true,
                     'success_message'=>'New order added successifully',
@@ -79,7 +76,7 @@ class OrdersController extends Controller
     public function show($id)
     {
          //get order id
-         $order = Order::findOrFail($id);
+         $order = Order::with('products')->findOrFail($id);
          if(!$order){
              return response()->json([
                  'success'=>false,
@@ -103,7 +100,7 @@ class OrdersController extends Controller
     public function edit($id)
     {
          //get order id
-         $order = Order::findOrFail($id);
+         $order = Order::with('products')->findOrFail($id);
          if(!$order){
              return response()->json([
                  'success'=>false,
@@ -125,10 +122,10 @@ class OrdersController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function updateorder(Request $request, $id)
     {
          //get id
-         $order = Order::findOrFail($id);
+         $order = Order::with('products')->findOrFail($id);
 
          //in case order found or not found
          if(!$order){
@@ -143,6 +140,7 @@ class OrdersController extends Controller
  
              //check if it is updated successifully
              if($order->update()){
+                 $order->products()->sync($request['product_id']);
                  return response()->json([
                      'success'=>true,
                      'success_message'=>'Order updated successifully!'
@@ -166,7 +164,7 @@ class OrdersController extends Controller
     public function destroy($id)
     {
          //get the product id
-         $order = Order::findOrFail($id);
+         $order = Order::with('products')->findOrFail($id);
 
          if(!$order){
              return response()->json([
@@ -176,7 +174,7 @@ class OrdersController extends Controller
          }
          else{
              if($order->delete()){
-                $order->deleted_at = date("Y-m-d H:i:s");
+                $order->products()->detach();
                  return response()->json([
                      'success'=>true,
                      'success_message'=>'Order deleted'
@@ -190,4 +188,6 @@ class OrdersController extends Controller
              }
          }
      }
+
+
     }

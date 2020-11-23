@@ -53,6 +53,8 @@ class SuppliersController extends Controller
 
         //check if there is success or failure in saving data
         if($supplier->save()){
+            //attach the product supplied by this supplier
+            $supplier->products()->attach($request['product_id']);
             return response()->json([
                 'success'=>true,
                 'success_message'=>'New supplier added successifully',
@@ -76,7 +78,7 @@ class SuppliersController extends Controller
     public function show($id)
     {
         //get the supplier id
-        $supplier = Supplier::findOrFail($id);
+        $supplier = Supplier::with('products')->findOrFail($id);
         if(!$supplier){
             return response()->json([
                 'success'=>false,
@@ -100,7 +102,7 @@ class SuppliersController extends Controller
     public function edit($id)
     {
         //get supplier id
-        $supplier = Supplier::findOrFail($id);
+        $supplier = Supplier::with('products')->findOrFail($id);
         if(!$supplier){
             return response()->json([
                 'success'=>false,
@@ -116,45 +118,6 @@ class SuppliersController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-         //get id
-         $supplier = Supplier::findOrFail($id);
-
-         //in case product item found or not found
-         if(!$supplier){
-             return response()->json([
-                 'success'=>false,
-                 'warning_message'=>'supplier not found'
-             ],400);
-         }
-         else{
-             $supplier->name = $request->name;
-             $supplier->updated_at = date('Y-m-d H:i:s');
-            
-             //check if it is updated successifully
-             if($supplier->update()){
-                 return response()->json([
-                     'success'=>true,
-                     'success_message'=>'Supplier updated successifully!'
-                 ]);
-             }
-             else{
-                 return response()->json([
-                     'success'=>false,
-                     'error_message'=>'Error, supplier not updated'
-                 ],500);
-             }
-         }
-    }
-
-    /**
      * Remove the specified resource from storage.
      *
      * @param  int  $id
@@ -163,7 +126,7 @@ class SuppliersController extends Controller
     public function destroy($id)
     {
         //get id
-        $supplier = Supplier::findOrFail($id);
+        $supplier = Supplier::with('products')->findOrFail($id);
 
         if(!$supplier){
             return response()->json([
@@ -172,8 +135,11 @@ class SuppliersController extends Controller
             ],400);
         }
         else{
+           
             if($supplier->delete()){
-                $supplier->deleted_at = date('Y-m-d H:i:s');
+                 //detach the products from supplier
+                 $supplier->products()->detach();
+
                 return response()->json([
                     'success'=>true,
                     'success_message'=>'Supplier deleted'
@@ -187,5 +153,38 @@ class SuppliersController extends Controller
             }
         }
     }
+
+     public function updatesupplier(Request $request,$id){
+           //get id
+           $supplier = Supplier::with('products')->findOrFail($id);
+
+           //in case product item found or not found
+           if(!$supplier){
+               return response()->json([
+                   'success'=>false,
+                   'warning_message'=>'supplier not found'
+               ],400);
+           }
+           else{
+               $supplier->name = $request->name;
+               $supplier->updated_at = date('Y-m-d H:i:s');
+              
+               //check if it is updated successifully
+               if($supplier->update()){
+                   //update the products supplied by supplier
+                   $supplier->products()->sync($request['product_id']);
+                   return response()->json([
+                       'success'=>true,
+                       'success_message'=>'Supplier updated successifully!'
+                   ]);
+               }
+               else{
+                   return response()->json([
+                       'success'=>false,
+                       'error_message'=>'Error, supplier not updated'
+                   ],500);
+               }
+           }
+     }
     }
 
